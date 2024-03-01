@@ -30,8 +30,12 @@ Idea: gtcsv and predcsv
 TO DO:
   - Ein repository ohne testdaten
     -> kann man einen passwortgeschützten folder anlegen?
-  - Erstelle predictions mit reference modell
+  - _Erstelle predictions mit reference modell -> beutzte mein eigenes -> fertig_
+  - Dateien müssen noch erstellt werden aber grad kein coolab mehr und sonst keine gpu.
+  - vl noch den pixelabstand wie in coolab.
   - Score berechnung wie gedacht.
+    - dazu in den csv nach frame suchen. Also nach t und dann die connecten weil ordnung anders sein kann.
+    - Die komischen test files kann man vl auch verwenden.
 
 
 
