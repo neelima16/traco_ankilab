@@ -1,26 +1,5 @@
 # traco_annotation
 
-Files:
-get_score: gets two csv and then computes the score for it.
-files with .traco are json files
-sampling: kann weg
-
-traco: annotation tool
-
-Folders: 
-files:
-leaderboard data: just the first 5 videos from test folder for the students
-test: data for testing
-test_data_csv: has all traco from test as csv files
-training: data for training
-training_csv: has all traco files from training as csv files
-
-
-Nootbooks: 
-get-score: calculates score for .traco files. So json files
-csvScore: calculates score for .csv files
-reference-solution-ankilab: same as example-solution in traco_external but Unet is build different and postprocessing is different
-
 
 Idea: gtcsv and predcsv
 - Load hex IDs from the predcsv and connect them to nearest hex ID in gtscv.
@@ -45,13 +24,16 @@ Idea: gtcsv and predcsv
   - And also the IDs have to be connected again to see which hexbug misses. 
   - Penalty could be inrceased if the same hexbug misses more often than one time.
   - Maybe the IDs of the hex change when their heads bump together. Possible fix see above.
-  -
+
+
+
 TO DO:
-Ein repository ohne testdaten
-mach alles zu csv
-kann man einen passwortgeschützten folder anlegen?
-Erstelle predictions mit reference modell
-Score berechnung wie gedacht.
+  - Ein repository ohne testdaten
+    -> kann man einen passwortgeschützten folder anlegen?
+  - Erstelle predictions mit reference modell
+  - Score berechnung wie gedacht.
+
+
 
 Fragen:
-Für test_25 keine traco?
+  - Für test_25 keine traco?
