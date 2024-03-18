@@ -5,13 +5,15 @@ import logging
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
-PENALTY_N_WRONG_HEXBUGS = -10_000  # only applies if the amount of predicted hexbugs is between 1 and 4
-PENALTY_MORE_THAN_FOUR_HEXBUGS = -10_000
-PENALTY_WRONG_NUMBER_FRAMES = -10_000
+PENALTY_N_WRONG_HEXBUGS = -1000  # only applies if the amount of predicted hexbugs is between 1 and 4
+PENALTY_WRONG_NUMBER_FRAMES = -1000
+PENALTY_FALSE_ID = -1000
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
-STREAK_POINTS= [0,2,40,60,200]
+STREAK_POINTS= [0,5,8,60,200]
+MAXIMUM_HEXBUGS=10
+MAGIC_NUMBER =50
 def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -> int:
     """
     Calculate the score for the given prediction and ground truth files.
@@ -47,8 +49,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
     # Get the number of frames and check if they are equal
     n_frames_gt = gt_df['t'].max() + 1
     n_frames_pred = pred_df['t'].max() + 1
-    """
-    UNSICHER WIE SINNVOLL MIT EINBAUEN  
+
     if n_frames_gt != n_frames_pred:
         final_score += PENALTY_WRONG_NUMBER_FRAMES * np.abs(n_frames_gt - n_frames_pred)
 
@@ -59,11 +60,12 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
         # set n_frames depending on which one is smaller
         n_frames = min(n_frames_gt, n_frames_pred)
     else:
-        n_frames = n_frames_gt"""
+        n_frames = n_frames_gt
     n_frames = n_frames_gt
+    #initialize dict to store the ids and streak data of the hexbugs
+    #[id, strak, framesofstrak] for n hexbugs
+    ids_for_streak = {i: [MAGIC_NUMBER, False, 0] for i in range(MAXIMUM_HEXBUGS)}# Maximum of 10 hexbugs?
     # Loop over all frames
-    ids_for_streak = {i: [50, False, 0] for i in range(10)}# Maximum of 10 hexbugs?
-    firstframe = True
     for idx in range(n_frames):
         if log:
             logger.info(f"Frame {idx}")
@@ -75,17 +77,12 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
         # Check the number of hexbugs and apply penalties if necessary
         n_hexbugs_gt = frame_gt_df['hexbug'].nunique()
         n_hexbugs_pred = frame_pred_df['hexbug'].nunique()
-        print(frame_pred_df['hexbug'])
         #used to connect ids with the entries of the distance matrix
         ids_gt = frame_gt_df['hexbug']
         ids_pred = frame_pred_df['hexbug']
 
-        if n_hexbugs_pred > 4:
-            # To prevent submissions with a lot of random guesses
-            final_score += PENALTY_MORE_THAN_FOUR_HEXBUGS
-            if log:
-                logger.info(f"Penalty for more than four hexbugs: {PENALTY_MORE_THAN_FOUR_HEXBUGS}")
-        else:
+       #If there is not the same number of hexbug as in gt_frame
+        if(np.abs(n_hexbugs_pred - n_hexbugs_gt) != 0):
             final_score += (np.abs(n_hexbugs_pred - n_hexbugs_gt) * PENALTY_N_WRONG_HEXBUGS)
             if log:
                 logger.info(f"Penalty for wrong number of hexbugs: "
@@ -95,16 +92,40 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
         distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),
                                 list(frame_pred_df[['x', 'y']].values), 'euclidean')
 
-        # Calculate the final score
+        # get hexbugs with shortest distance
         gt_hex, pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
-        #print(ids_for_streak)
+        #for debugging
+        print(ids_for_streak)
+
         for i, j in zip(gt_hex, pred_hex):
+            # i is the gt hex and j the pred hex with the shortest distance
+            # get ids of the hex i and hex j
             gt_id = ids_gt.iloc[i]
             pred_id = ids_pred.iloc[j]
+            #look if hex is on streak
             if(ids_for_streak[gt_id][0] == pred_id):
                 ids_for_streak[gt_id][1] = True # the streak is on
                 ids_for_streak[gt_id][2] += 1
+            #if not on streak then give penalty and reset streak
             else:
+                #give penalty if id is not used by any other  hexbug
+                keys_with_50 = [key for key, entry in ids_for_streak.items() if key != gt_id and entry[0] == pred_id]
+                #if(any(entry[0] == pred_id for key, entry in ids_for_streak.items() if key != gt_id)):
+                if(keys_with_50):
+                    ids_for_streak[keys_with_50[0]][0] = 50
+                    final_score += PENALTY_FALSE_ID
+                    if log:
+                        logger.info(f"Penalty for wrong ID for Hexbug: {pred_id} "
+                                    f". Id was already assigned to hexbug {keys_with_50[0]} earlier and now is hexbug {gt_id}"
+                                    f" Penalty : {PENALTY_FALSE_ID}")
+                #give penalty of not first frame or a new hexbug
+                if(ids_for_streak[gt_id][0] != MAGIC_NUMBER):
+                    final_score += PENALTY_FALSE_ID
+                    if log:
+                        logger.info(f"Penalty for wrong ID for Hexbug: {pred_id} "
+                                    f"which was Hexbug {ids_for_streak[gt_id][0]} "
+                                    f"and now is Hexbug {gt_id}"
+                                    f" : {PENALTY_FALSE_ID}")
                 ids_for_streak[gt_id][0] = pred_id
                 ids_for_streak[gt_id][1] = False  # the streak is on
                 ids_for_streak[gt_id][2] = 0
@@ -115,9 +136,9 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
             for intervalls in range(len(RINGS) - 1):
                 if RINGS[intervalls] < distance <= RINGS[intervalls + 1]:
                     points_recived = POINTS_PER_RING[intervalls+1]
-                    if(distance<1):
-                        points_recived = 100
                     break
+                if(distance <= 1):
+                    points_recived = 100
 
             #Look which streak
             for intervall in range(len(STREAK_POINTS) - 1):
@@ -176,7 +197,7 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     # path_pred = "predicted_data_for_testing_scorecalc.csv"
     # path_test = "test_data_csv/test001.csv"
-    path_pred = "test_score/test_onegoes_samecomes.csv"
+    path_pred = "test_score/same_goes_and_comes.csv"
     path_test = "test_score/ground_trouth.csv"
     #print(f"Score: {get_score(args.path_to_prediction, args.path_to_gt, args.log)}")
     print(f"Score: {get_score_fct(path_pred, path_test, log = True)}")
