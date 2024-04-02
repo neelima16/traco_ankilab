@@ -198,24 +198,24 @@ def _validate_dataframe_structure(df: pd.DataFrame, required_columns: list) -> b
 
 # define main function call
 if __name__ == "__main__":
-    # extract args
-    # import argparse
-    #
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("path_to_prediction", help="path to the prediction file")
-    # parser.add_argument("path_to_gt", help="path to the ground truth file")
-    # parser.add_argument("--log", help="log the score", action="store_true")
-    # args = parser.parse_args()
+    #extract args
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path_to_prediction", help="path to the prediction file")
+    parser.add_argument("path_to_gt", help="path to the ground truth file")
+    parser.add_argument("--log", help="log the score", action="store_true")
+    args = parser.parse_args()
     # path_pred = "predicted_data_for_testing_scorecalc.csv"
     # path_test = "test_data_csv/test001.csv"
     #path_test = "test_score/ground_trouth.csv"
     #path_pred = "test_score/same_goes_and_comes.csv"
     #path_pred = "test_score/only_coord_different.csv"
     #path_pred = "test_score/only_coord_different_and_number_hex_different.csv"
-    path_test = "test/test001.csv"
-    path_pred = "predicted_data_for_testing_scorecalc.csv"
+    #path_test = "test/test001.csv"
+    #path_pred = "predicted_data_for_testing_scorecalc.csv"
 
 
-    #print(f"Score: {get_score(args.path_to_prediction, args.path_to_gt, args.log)}")
-    print(f"Score: {get_score_fct(path_pred, path_test, log = True)}")
+    print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
+    #print(f"Score: {get_score_fct(path_pred, path_test, log = True)}")
 

@@ -8,13 +8,5 @@
  - look if ids are the same as in last frame and if not get penatly 
  - get points frome rings
  - look at what streak and double or sth
- - 
 
 
-TO DO:
- - Folie was abzugeben
-
-
-
-Fragen:
-    - Für test_25 keine traco?
