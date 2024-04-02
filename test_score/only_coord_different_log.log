@@ -1,0 +1,47 @@
+Frame 0
+Distance between hexbug 0 and 0: 6.4031242374328485   Points recived : 25    Hexbug on Fire: False
+Distance between hexbug 1 and 1: 1.0   Points recived : 100    Hexbug on Fire: False
+
+Frame 1
+Distance between hexbug 0 and 0: 2.23606797749979   Points recived : 50    Hexbug on Fire: True
+Distance between hexbug 1 and 1: 8.246211251235321   Points recived : 25    Hexbug on Fire: True
+
+Frame 2
+Distance between hexbug 0 and 0: 7.615773105863909   Points recived : 25    Hexbug on Fire: True
+Distance between hexbug 1 and 1: 7.0   Points recived : 25    Hexbug on Fire: True
+
+Frame 3
+Distance between hexbug 0 and 0: 2.23606797749979   Points recived : 50    Hexbug on Fire: True
+Distance between hexbug 1 and 1: 3.1622776601683795   Points recived : 50    Hexbug on Fire: True
+
+Frame 4
+Distance between hexbug 0 and 0: 6.4031242374328485   Points recived : 25    Hexbug on Fire: True
+Distance between hexbug 1 and 1: 1.4142135623730951   Points recived : 50    Hexbug on Fire: True
+
+Frame 5
+Distance between hexbug 0 and 0: 3.605551275463989   Points recived : 50    Hexbug on Fire: True
+
+Frame 6
+Distance between hexbug 0 and 0: 1.0   Points recived : 200    Hexbug on Fire: True
+
+Frame 7
+Distance between hexbug 0 and 0: 7.280109889280518   Points recived : 50    Hexbug on Fire: True
+
+Frame 8
+Distance between hexbug 0 and 0: 5.830951894845301   Points recived : 50    Hexbug on Fire: True
+Distance between hexbug 2 and 2: 2.8284271247461903   Points recived : 50    Hexbug on Fire: False
+
+Frame 9
+Distance between hexbug 0 and 0: 1.0   Points recived : 300    Hexbug on Fire: True
+Distance between hexbug 2 and 2: 4.123105625617661   Points recived : 50    Hexbug on Fire: True
+
+Frame 10
+Distance between hexbug 0 and 0: 3.1622776601683795   Points recived : 150    Hexbug on Fire: True
+Distance between hexbug 2 and 2: 8.602325267042627   Points recived : 25    Hexbug on Fire: True
+
+Frame 11
+Distance between hexbug 0 and 0: 10.0   Points recived : 75    Hexbug on Fire: True
+Distance between hexbug 2 and 2: 5.0990195135927845   Points recived : 25    Hexbug on Fire: True
+
+
+Final score: 1450

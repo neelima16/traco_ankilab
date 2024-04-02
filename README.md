@@ -12,13 +12,9 @@
 
 
 TO DO:
-  - Ein repository ohne testdaten
-    -> kann man einen passwortgeschützten folder anlegen?
-  - Score berechnung wie gedacht.
-    - dazu in den csv nach frame suchen. Also nach t und dann die connecten weil ordnung anders sein kann.
+ - Folie was abzugeben
 
 
 
 Fragen:
     - Für test_25 keine traco?
-    - Streak so wie ist oder das man 

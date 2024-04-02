@@ -7,7 +7,7 @@ from scipy.optimize import linear_sum_assignment
 
 PENALTY_N_WRONG_HEXBUGS = -1000  # only applies if the amount of predicted hexbugs is between 1 and 4
 PENALTY_WRONG_NUMBER_FRAMES = -1000
-PENALTY_FALSE_ID = -1000
+PENALTY_FALSE_ID = -500
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
@@ -80,8 +80,18 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
         #used to connect ids with the entries of the distance matrix
         ids_gt = frame_gt_df['hexbug']
         ids_pred = frame_pred_df['hexbug']
+        #look if there are ids doubled
+        duplicate_values = ids_pred.duplicated()
+        if(duplicate_values.any()):
+            print(duplicate_values)
+            final_score += -2000
+            if log:
+                logger.info(f"Penalty for assigning the same id to multible hexbug: "
+                            f"{-2000}. "
+                            f"This frame is skipped.")
+            continue
 
-       #If there is not the same number of hexbug as in gt_frame
+        #If there is not the same number of hexbug as in gt_frame
         if(np.abs(n_hexbugs_pred - n_hexbugs_gt) != 0):
             final_score += (np.abs(n_hexbugs_pred - n_hexbugs_gt) * PENALTY_N_WRONG_HEXBUGS)
             if log:
@@ -115,17 +125,18 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                     ids_for_streak[keys_with_50[0]][0] = 50
                     final_score += PENALTY_FALSE_ID
                     if log:
-                        logger.info(f"Penalty for wrong ID for Hexbug: {pred_id} "
-                                    f". Id was already assigned to hexbug {keys_with_50[0]} earlier and now is hexbug {gt_id}"
+                        logger.info(f"Penalty for wrong ID for hexbug: {gt_id}"
+                                    f". Id {pred_id} was already assigned to hexbug {keys_with_50[0]} earlier "
+                                    f"and now is assigned to hexbug {gt_id}."
                                     f" Penalty : {PENALTY_FALSE_ID}")
                 #give penalty of not first frame or a new hexbug
                 if(ids_for_streak[gt_id][0] != MAGIC_NUMBER):
                     final_score += PENALTY_FALSE_ID
                     if log:
-                        logger.info(f"Penalty for wrong ID for Hexbug: {pred_id} "
-                                    f"which was Hexbug {ids_for_streak[gt_id][0]} "
-                                    f"and now is Hexbug {gt_id}"
-                                    f" : {PENALTY_FALSE_ID}")
+                        logger.info(f"Penalty for wrong ID for hexbug: {gt_id} "
+                                    f"which was hexbug {ids_for_streak[gt_id][0]} "
+                                    f"and now is hexbug {pred_id}."
+                                    f"Penalty : {PENALTY_FALSE_ID}")
                 ids_for_streak[gt_id][0] = pred_id
                 ids_for_streak[gt_id][1] = False  # the streak is on
                 ids_for_streak[gt_id][2] = 0
@@ -197,8 +208,14 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     # path_pred = "predicted_data_for_testing_scorecalc.csv"
     # path_test = "test_data_csv/test001.csv"
-    path_pred = "test_score/same_goes_and_comes.csv"
-    path_test = "test_score/ground_trouth.csv"
+    #path_test = "test_score/ground_trouth.csv"
+    #path_pred = "test_score/same_goes_and_comes.csv"
+    #path_pred = "test_score/only_coord_different.csv"
+    #path_pred = "test_score/only_coord_different_and_number_hex_different.csv"
+    path_test = "test/test001.csv"
+    path_pred = "predicted_data_for_testing_scorecalc.csv"
+
+
     #print(f"Score: {get_score(args.path_to_prediction, args.path_to_gt, args.log)}")
     print(f"Score: {get_score_fct(path_pred, path_test, log = True)}")
 
