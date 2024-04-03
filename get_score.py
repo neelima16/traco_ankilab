@@ -1,20 +1,20 @@
 import numpy as np
 import pandas as pd
 import logging
-
+import cv2
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
 PENALTY_N_WRONG_HEXBUGS = -1000  # only applies if the amount of predicted hexbugs is between 1 and 4
 PENALTY_WRONG_NUMBER_FRAMES = -1000
-PENALTY_FALSE_ID = -500
+PENALTY_FALSE_ID = -300
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
 STREAK_POINTS= [0,5,8,60,200]
 MAXIMUM_HEXBUGS=10
 MAGIC_NUMBER =50
-def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -> int:
+def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, vid: bool = False) -> int:
     """
     Calculate the score for the given prediction and ground truth files.
     :param path_to_prediction: Path to the prediction .csv file.
@@ -59,9 +59,24 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
 
         # set n_frames depending on which one is smaller
         n_frames = min(n_frames_gt, n_frames_pred)
+        #do not make video if frames are incorrect
+        vid = False
     else:
         n_frames = n_frames_gt
-    n_frames = n_frames_gt
+
+    # OpenCV VideoWriter object to write the video
+    if vid:
+        video_input_path = path_to_gt.replace(".csv", ".mp4")
+        output_video_path = path_to_prediction.replace(".csv", "_video.mp4")
+        input_video  = cv2.VideoCapture(video_input_path)
+        # Check if camera opened successfully
+        if (input_video .isOpened() == False):
+            print("Error opening video stream or file")
+        width = int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(input_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        fps = int(input_video.get(cv2.CAP_PROP_FPS))
+        output_video = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+
     #initialize dict to store the ids and streak data of the hexbugs
     #[id, strak, framesofstrak] for n hexbugs
     ids_for_streak = {i: [MAGIC_NUMBER, False, 0] for i in range(MAXIMUM_HEXBUGS)}# Maximum of 10 hexbugs?
@@ -99,16 +114,26 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                             f"{np.abs(n_hexbugs_pred - n_hexbugs_gt) * PENALTY_N_WRONG_HEXBUGS}")
 
         # Calculate the distance between the hexbugs
-        distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),
-                                list(frame_pred_df[['x', 'y']].values), 'euclidean')
-
+        distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
         # get hexbugs with shortest distance
         gt_hex, pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
         #for debugging
-        print(ids_for_streak)
+        #print(ids_for_streak)
+        #print(gt_hex,pred_hex)
+
+        #make video
+        if vid:
+            ret, frame = input_video.read()
+            if not ret:
+                break
+            # Process the frame (draw a dot)
+            processed_frame = plot_pred_and_gt(list(frame_gt_df[['x', 'y']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
+            #cv2.imshow("Frame with Dot", processed_frame)
+            #cv2.waitKey(0)
+            output_video.write(processed_frame)
 
         for i, j in zip(gt_hex, pred_hex):
-            # i is the gt hex and j the pred hex with the shortest distance
+            # i is the gt hex and j the pred hex with the shortest distance between them
             # get ids of the hex i and hex j
             gt_id = ids_gt.iloc[i]
             pred_id = ids_pred.iloc[j]
@@ -118,9 +143,8 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                 ids_for_streak[gt_id][2] += 1
             #if not on streak then give penalty and reset streak
             else:
-                #give penalty if id is not used by any other  hexbug
+                #give penalty if id is used by any other hexbug
                 keys_with_50 = [key for key, entry in ids_for_streak.items() if key != gt_id and entry[0] == pred_id]
-                #if(any(entry[0] == pred_id for key, entry in ids_for_streak.items() if key != gt_id)):
                 if(keys_with_50):
                     ids_for_streak[keys_with_50[0]][0] = 50
                     final_score += PENALTY_FALSE_ID
@@ -137,8 +161,9 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                                     f"which was hexbug {ids_for_streak[gt_id][0]} "
                                     f"and now is hexbug {pred_id}."
                                     f"Penalty : {PENALTY_FALSE_ID}")
+                #give hexbugs new id after penalty or if this is first frame
                 ids_for_streak[gt_id][0] = pred_id
-                ids_for_streak[gt_id][1] = False  # the streak is on
+                ids_for_streak[gt_id][1] = False  # the streak is of
                 ids_for_streak[gt_id][2] = 0
 
             distance = distance_matrix[i, j]
@@ -152,9 +177,11 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                     points_recived = 100
 
             #Look which streak
+            multiplikator = 0
             for intervall in range(len(STREAK_POINTS) - 1):
                 if STREAK_POINTS[intervall] < ids_for_streak[i][2] <= STREAK_POINTS[intervall + 1]:
-                    points_recived = points_recived *(intervall+ 1)
+                    multiplikator = (intervall+ 1)
+                    points_recived = points_recived * multiplikator
                     break
 
             final_score += points_recived
@@ -163,9 +190,14 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
                 logger.info(f"Distance between hexbug {gt_id} and "
                             f"{pred_id}: {distance_matrix[i, j]}   "
                             f"Points recived : {points_recived}   "
-                            f" Hexbug on Fire: {ids_for_streak[gt_id][1]}")
+                            f" Hexbug on Fire: {ids_for_streak[gt_id][1]} with multiplicator x{multiplikator}")
         if log:
             logger.info("")
+
+    if vid:
+        input_video.release()
+        output_video.release()
+        cv2.destroyAllWindows()
 
     if log:
         logger.info(f"\nFinal score: {final_score}")
@@ -174,6 +206,28 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False) -
 
     return final_score
 
+def plot_pred_and_gt(gt_coord, pred_coord, frame, gt_hex_ids, pred_hex_ids, frame_number):
+    # Draw dots on the frame based on the coordinates
+    frame = add_legend(frame,frame_number)
+    for i in range(len(gt_hex_ids)):
+        cv2.putText(frame, str(gt_hex_ids[i]), gt_coord[i].astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+        cv2.putText(frame, str(pred_hex_ids[i]), pred_coord[pred_hex_ids[i]].astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    return frame
+
+
+def add_legend(frame,frame_number):
+    # Define legend entries
+    legend_entries = [
+        ("Ground Truth ID", (30, 30), (0, 255, 0)),  # Text, position, color
+        ("Prediction ID", (30, 60), (0, 0, 255)),
+        ("Frame Number: "+str(frame_number), (30, 90), (255, 0, 0))  # Text, position, color
+    ]
+
+    # Draw legend entries on the frame
+    for text, position, color in legend_entries:
+        cv2.putText(frame, text, position, cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+
+    return frame
 
 def _validate_dataframe_structure(df: pd.DataFrame, required_columns: list) -> bool:
     """
@@ -199,16 +253,16 @@ def _validate_dataframe_structure(df: pd.DataFrame, required_columns: list) -> b
 # define main function call
 if __name__ == "__main__":
     #extract args
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("path_to_prediction", help="path to the prediction file")
-    parser.add_argument("path_to_gt", help="path to the ground truth file")
-    parser.add_argument("--log", help="log the score", action="store_true")
-    args = parser.parse_args()
-    # path_pred = "predicted_data_for_testing_scorecalc.csv"
-    # path_test = "test_data_csv/test001.csv"
-    #path_test = "test_score/ground_trouth.csv"
+    # import argparse
+    #
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("path_to_prediction", help="path to the prediction file")
+    # parser.add_argument("path_to_gt", help="path to the ground truth file")
+    # parser.add_argument("--log", help="log the score", action="store_true")
+    # args = parser.parse_args()
+    path_pred = "predicted_data_from_me_for_testing.csv"
+    path_test = "test/test001.csv"
+    #path_test = "test_score/ground_trouth_onegoes_othercomes.csv"
     #path_pred = "test_score/same_goes_and_comes.csv"
     #path_pred = "test_score/only_coord_different.csv"
     #path_pred = "test_score/only_coord_different_and_number_hex_different.csv"
@@ -216,6 +270,6 @@ if __name__ == "__main__":
     #path_pred = "predicted_data_for_testing_scorecalc.csv"
 
 
-    print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
-    #print(f"Score: {get_score_fct(path_pred, path_test, log = True)}")
+    #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
+    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = False)}")
 

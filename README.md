@@ -10,3 +10,7 @@
  - look at what streak and double or sth
 
 
+get score:
+ - if you want to have a log for your score calculation set log = True
+ - if you want to have a video of you score calculation set vid = True
+   -> csv must be same number of frames and there has to be a mp4 video in the same folder with the groud trouth

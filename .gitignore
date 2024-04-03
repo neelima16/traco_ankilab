@@ -2,7 +2,13 @@ __pycache__
 .ipynb_checkpoints
 /settings.json
 /test_score/
-/predicted_data.csv
+/predicted_data_from_me_for_testing.csv
 /predicted_data_for_testing_scorecalc.csv
 /traco_file_to_csv.py
 /plot_frame.py
+/test/
+/predicted_data_for_testing_scorecalc_log.log
+/predicted_data_for_testing_scorecalc_videoichbinadepp.mp4
+/predicted_data_from_me_for_testing.csv
+/predicted_data_from_me_for_testing_log.log
+/predicted_data_from_me_for_testing_video.mp4
