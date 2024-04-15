@@ -210,16 +210,21 @@ def plot_pred_and_gt(gt_coord, pred_coord, frame, gt_hex_ids, pred_hex_ids, fram
     # Draw dots on the frame based on the coordinates
     frame = add_legend(frame,frame_number)
     for i in range(len(gt_hex_ids)):
-        cv2.putText(frame, str(gt_hex_ids[i]), gt_coord[i].astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-        cv2.putText(frame, str(pred_hex_ids[i]), pred_coord[pred_hex_ids[i]].astype(int), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.circle(frame,gt_coord[i].astype(int),radius= 25, color= (0, 0, 255),thickness=-1)
+        cv2.circle(frame, gt_coord[i].astype(int), radius=20, color=(255, 0, 0), thickness=-1)
+        cv2.circle(frame, gt_coord[i].astype(int), radius=10, color=(255, 255, 0), thickness=-1)
+        cv2.circle(frame, gt_coord[i].astype(int), radius=3, color=(255, 0, 255), thickness=-1)
+        cv2.circle(frame, pred_coord[pred_hex_ids[i]].astype(int), radius=3, color=(255, 255, 255), thickness=-1)
+        cv2.putText(frame, str(gt_hex_ids[i]), gt_coord[i].astype(int)+10, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 255), 3)
+        cv2.putText(frame, str(pred_hex_ids[i]), pred_coord[pred_hex_ids[i]].astype(int)+40, cv2.FONT_HERSHEY_SIMPLEX, 2, (255, 255, 255), 3)
     return frame
 
 
 def add_legend(frame,frame_number):
     # Define legend entries
     legend_entries = [
-        ("Ground Truth ID", (30, 30), (0, 255, 0)),  # Text, position, color
-        ("Prediction ID", (30, 60), (0, 0, 255)),
+        ("Ground Truth", (30, 30), (255, 0, 255)),  # Text, position, color
+        ("Prediction", (30, 60), (255, 255, 255)),
         ("Frame Number: "+str(frame_number), (30, 90), (255, 0, 0))  # Text, position, color
     ]
 
@@ -271,5 +276,5 @@ if __name__ == "__main__":
 
 
     #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
-    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = False)}")
+    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = True)}")
 
