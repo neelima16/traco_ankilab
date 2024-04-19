@@ -31,3 +31,6 @@ The file get_score.py lets you evaluate your model to see which score you would 
       - if you want to have a video of you score calculation set vid = True
         -> csv must be same number of frames and there has to be a mp4 video in the same folder with the groud trouth
 You can call it like this: score = get_score(str(pred_path / file), str(gt_path / file), log=True, cid = False)
+
+## Reference Solution
+We suggest you to run the solution on Google Colab and connect that to you google drive in order to load the model and the videos.
