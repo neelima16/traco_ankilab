@@ -119,12 +119,11 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
         distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
         # get hexbugs with shortest distance
 
-        gt_hex = [i for i in range(n_hexbugs_gt)]
-        #gt_hex = [0,1,2]
-        pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
+        gt_hex,pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
         #for debugging
-        #print(ids_for_streak)
-        #print(gt_hex,pred_hex)
+        # print(ids_for_streak)
+        # print(gt_hex)
+        # print(pred_hex)
 
         #make video
         if vid:
@@ -143,6 +142,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             gt_id = ids_gt.iloc[i]
             pred_id = ids_pred.iloc[j]
             #look if hex is on streak
+            #print(i,j,ids_for_streak[gt_id][0],pred_id)
             if(ids_for_streak[gt_id][0] == pred_id):
                 ids_for_streak[gt_id][1] = True # the streak is on
                 ids_for_streak[gt_id][2] += 1
@@ -271,11 +271,10 @@ if __name__ == "__main__":
     # parser.add_argument("path_to_gt", help="path to the ground truth file")
     # parser.add_argument("--log", help="log the score", action="store_true")
     # args = parser.parse_args()
-    path_pred = "trainingtest97.csv"
-    path_test = "training/training097.csv"
+    path_pred = ""
+    path_test = ""
 
 
 
-    #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
-    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = True)}")
+    #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = True)}")
 
