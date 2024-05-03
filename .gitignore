@@ -13,3 +13,17 @@ __pycache__
 /predicted_data_from_me_for_testing_log.log
 /predicted_data_from_me_for_testing_video.mp4
 /submission_guidelines.docx
+/helper.py
+/predicted_data_test001.csv
+/predicted_data_test001_log.log
+/predicted_data_test002.csv
+/predicted_data_test002_log.log
+/predicted_data_test004.csv
+/predicted_data_test004_log.log
+/predicted_data_test004_video.mp4
+/predicted_data_test004_video1.mp4
+/trainingt01_log.log
+/trainingt01.csv
+/trainingtest97.csv
+/trainingtest97_log.log
+/trainingtest97_video.mp4

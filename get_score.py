@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import logging
 import cv2
+#from helper import cdist, linear_sum_assignment
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
@@ -11,7 +12,7 @@ PENALTY_FALSE_ID = -300
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
-STREAK_POINTS= [0,5,8,60,200]
+STREAK_POINTS= [0,20,40,60,200]
 MAXIMUM_HEXBUGS=10
 MAGIC_NUMBER =50
 def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, vid: bool = False) -> int:
@@ -74,6 +75,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             print("Error opening video stream or file")
         width = int(input_video.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(input_video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        #print(width,height)
         fps = int(input_video.get(cv2.CAP_PROP_FPS))
         output_video = cv2.VideoWriter(output_video_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
 
@@ -116,7 +118,10 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
         # Calculate the distance between the hexbugs
         distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
         # get hexbugs with shortest distance
-        gt_hex, pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
+
+        gt_hex = [i for i in range(n_hexbugs_gt)]
+        #gt_hex = [0,1,2]
+        pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
         #for debugging
         #print(ids_for_streak)
         #print(gt_hex,pred_hex)
@@ -128,8 +133,8 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
                 break
             # Process the frame (draw a dot)
             processed_frame = plot_pred_and_gt(list(frame_gt_df[['x', 'y']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
-            #cv2.imshow("Frame with Dot", processed_frame)
-            #cv2.waitKey(0)
+            # cv2.imshow("Frame with Dot", processed_frame)
+            # cv2.waitKey(0)
             output_video.write(processed_frame)
 
         for i, j in zip(gt_hex, pred_hex):
@@ -191,7 +196,9 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
                             f"{pred_id}: {distance_matrix[i, j]}   "
                             f"Points recived : {points_recived}   "
                             f" Hexbug on Fire: {ids_for_streak[gt_id][1]} with multiplicator x{multiplikator}")
+
         if log:
+            logger.info(f"Score: {final_score}")
             logger.info("")
 
     if vid:
@@ -210,7 +217,7 @@ def plot_pred_and_gt(gt_coord, pred_coord, frame, gt_hex_ids, pred_hex_ids, fram
     # Draw dots on the frame based on the coordinates
     frame = add_legend(frame,frame_number)
     for i in range(len(gt_hex_ids)):
-        cv2.circle(frame,gt_coord[i].astype(int),radius= 25, color= (0, 0, 255),thickness=-1)
+        cv2.circle(frame, gt_coord[i].astype(int),radius= 25, color= (0, 0, 255),thickness=-1)
         cv2.circle(frame, gt_coord[i].astype(int), radius=20, color=(255, 0, 0), thickness=-1)
         cv2.circle(frame, gt_coord[i].astype(int), radius=10, color=(255, 255, 0), thickness=-1)
         cv2.circle(frame, gt_coord[i].astype(int), radius=3, color=(255, 0, 255), thickness=-1)
@@ -259,20 +266,14 @@ def _validate_dataframe_structure(df: pd.DataFrame, required_columns: list) -> b
 if __name__ == "__main__":
     #extract args
     # import argparse
-    #
     # parser = argparse.ArgumentParser()
     # parser.add_argument("path_to_prediction", help="path to the prediction file")
     # parser.add_argument("path_to_gt", help="path to the ground truth file")
     # parser.add_argument("--log", help="log the score", action="store_true")
     # args = parser.parse_args()
-    path_pred = "predicted_data_from_me_for_testing.csv"
-    path_test = "test/test001.csv"
-    #path_test = "test_score/ground_trouth_onegoes_othercomes.csv"
-    #path_pred = "test_score/same_goes_and_comes.csv"
-    #path_pred = "test_score/only_coord_different.csv"
-    #path_pred = "test_score/only_coord_different_and_number_hex_different.csv"
-    #path_test = "test/test001.csv"
-    #path_pred = "predicted_data_for_testing_scorecalc.csv"
+    path_pred = "trainingtest97.csv"
+    path_test = "training/training097.csv"
+
 
 
     #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
