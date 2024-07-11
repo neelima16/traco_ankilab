@@ -13,7 +13,6 @@ __pycache__
 /predicted_data_from_me_for_testing_log.log
 /predicted_data_from_me_for_testing_video.mp4
 /submission_guidelines.docx
-/helper.py
 /predicted_data_test001.csv
 /predicted_data_test001_log.log
 /predicted_data_test002.csv
@@ -27,3 +26,4 @@ __pycache__
 /trainingtest97.csv
 /trainingtest97_log.log
 /trainingtest97_video.mp4
+/JustAJoke/

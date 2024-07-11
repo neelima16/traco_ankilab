@@ -2,13 +2,13 @@ import numpy as np
 import pandas as pd
 import logging
 import cv2
-#from helper import cdist, linear_sum_assignment
-from scipy.spatial.distance import cdist
-from scipy.optimize import linear_sum_assignment
+from helper import cdist, Hungarian
+#from scipy.spatial.distance import cdist
+#from scipy.optimize import linear_sum_assignment
 
-PENALTY_N_WRONG_HEXBUGS = -1000  # only applies if the amount of predicted hexbugs is between 1 and 4
-PENALTY_WRONG_NUMBER_FRAMES = -1000
-PENALTY_FALSE_ID = -300
+PENALTY_N_WRONG_HEXBUGS = -100  # only applies if the amount of predicted hexbugs is between 1 and 4
+PENALTY_WRONG_NUMBER_FRAMES = -10000
+PENALTY_FALSE_ID = -30
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
@@ -35,7 +35,8 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
     # Load the data
     pred_df = pd.read_csv(path_to_prediction, index_col=0)
     gt_df = pd.read_csv(path_to_gt, index_col=0)
-
+    #print(gt_df)
+    #print(pred_df)
     # check if the predictions dataframe has at least one row
     if pred_df.shape[0] == 0:
         raise ValueError("The prediction DataFrame does not contain any rows.")
@@ -116,14 +117,20 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
                             f"{np.abs(n_hexbugs_pred - n_hexbugs_gt) * PENALTY_N_WRONG_HEXBUGS}")
 
         # Calculate the distance between the hexbugs
-        distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
+        #here is in the website x and y changed because test data is inverted
+        distance_matrix = cdist(list(frame_gt_df[['y', 'x']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
         # get hexbugs with shortest distance
-
-        gt_hex,pred_hex = linear_sum_assignment(distance_matrix)  # Hungarian algorithm
+        #print(distance_matrix)
+        hungarian = Hungarian(distance_matrix)
+        hungarian.calculate()
+        results = hungarian.get_results()
+        gt_hex = [t[0] for t in results]
+        pred_hex = [t[1] for t in results]
         #for debugging
         # print(ids_for_streak)
         # print(gt_hex)
         # print(pred_hex)
+        #print(gt_hex,pred_hex)
 
         #make video
         if vid:
@@ -131,7 +138,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             if not ret:
                 break
             # Process the frame (draw a dot)
-            processed_frame = plot_pred_and_gt(list(frame_gt_df[['x', 'y']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
+            processed_frame = plot_pred_and_gt(list(frame_gt_df[['y', 'x']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
             # cv2.imshow("Frame with Dot", processed_frame)
             # cv2.waitKey(0)
             output_video.write(processed_frame)
@@ -271,10 +278,12 @@ if __name__ == "__main__":
     # parser.add_argument("path_to_gt", help="path to the ground truth file")
     # parser.add_argument("--log", help="log the score", action="store_true")
     # args = parser.parse_args()
-    path_pred = ""
-    path_test = ""
+    path_pred = "JustAJoke/test005.csv"
+    #path_pred = "test/test001.csv"
+    path_test = "test/test005.csv"
 
 
 
-    #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = True)}")
+    #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
+    print(f"Score: {get_score_fct(path_pred, path_test, log = True, vid = False)}")
 
