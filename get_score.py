@@ -47,7 +47,12 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
         raise ValueError(f"The prediction DataFrame does not have the required columns: {required_columns}")
     else:
         pass
-
+    # Check if any value in the 'hexbug' column is greater than 10.
+    # This has to do that the ids_for_streak is only 10 long. So only ids till maxnumber_hexbugs are safed
+    if (pred_df['hexbug'] > MAXIMUM_HEXBUGS).any():
+        if log:
+            logger.info(f"Your ids should not be greater than 10!")
+        return -10000
     # Get the number of frames and check if they are equal
     n_frames_gt = gt_df['t'].max() + 1
     n_frames_pred = pred_df['t'].max() + 1
@@ -278,9 +283,8 @@ if __name__ == "__main__":
     # parser.add_argument("path_to_gt", help="path to the ground truth file")
     # parser.add_argument("--log", help="log the score", action="store_true")
     # args = parser.parse_args()
-    path_pred = "JustAJoke/test005.csv"
-    #path_pred = "test/test001.csv"
-    path_test = "test/test005.csv"
+    path_pred = "uploads/HacksBug/test001.csv"
+    path_test = "test/test001.csv"
 
 
 
