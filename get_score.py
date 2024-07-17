@@ -2,18 +2,20 @@ import numpy as np
 import pandas as pd
 import logging
 import cv2
+import glob
+import os
 from helper import cdist, Hungarian
 #from scipy.spatial.distance import cdist
 #from scipy.optimize import linear_sum_assignment
 
 PENALTY_N_WRONG_HEXBUGS = -100  # only applies if the amount of predicted hexbugs is between 1 and 4
 PENALTY_WRONG_NUMBER_FRAMES = -10000
-PENALTY_FALSE_ID = -30
+PENALTY_FALSE_ID = -50
 #Rings in Pixel
 RINGS=          [1,  5 ,10,15,20,25]
 POINTS_PER_RING=[100,50,25,15,10,5]
 STREAK_POINTS= [0,20,40,60,200]
-MAXIMUM_HEXBUGS=10
+MAXIMUM_HEXBUGS=11
 MAGIC_NUMBER =50
 def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, vid: bool = False) -> int:
     """
@@ -95,8 +97,14 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
 
         # Get the data for the current frame
         frame_gt_df = gt_df[gt_df['t'] == idx]
+        #Look if that frame is even availabe in the prediction
+        if(pred_df[pred_df['t'] == idx].empty):
+            final_score += PENALTY_FALSE_ID
+            if log:
+                logger.info(f"Penalty because frame does not exist: "
+                            f"{PENALTY_N_WRONG_HEXBUGS*2}")
+            continue
         frame_pred_df = pred_df[pred_df['t'] == idx]
-
         # Check the number of hexbugs and apply penalties if necessary
         n_hexbugs_gt = frame_gt_df['hexbug'].nunique()
         n_hexbugs_pred = frame_pred_df['hexbug'].nunique()
@@ -106,7 +114,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
         #look if there are ids doubled
         duplicate_values = ids_pred.duplicated()
         if(duplicate_values.any()):
-            print(duplicate_values)
+            #print(duplicate_values)
             final_score += -2000
             if log:
                 logger.info(f"Penalty for assigning the same id to multible hexbug: "
@@ -120,7 +128,13 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             if log:
                 logger.info(f"Penalty for wrong number of hexbugs: "
                             f"{np.abs(n_hexbugs_pred - n_hexbugs_gt) * PENALTY_N_WRONG_HEXBUGS}")
-
+        # Checking for NaN values in columns 'x' and 'y'
+        if (frame_pred_df[['x', 'y']].isna().any().any()):
+            final_score += PENALTY_FALSE_ID
+            if log:
+                logger.info(f"Penalty for NaNs in Dataframe: "
+                            f"{PENALTY_N_WRONG_HEXBUGS}")
+            continue
         # Calculate the distance between the hexbugs
         #here is in the website x and y changed because test data is inverted
         distance_matrix = cdist(list(frame_gt_df[['y', 'x']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
@@ -222,8 +236,11 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
         logger.info(f"\nFinal score: {final_score}")
         logger.removeHandler(handler)
         handler.close()
-
-    return final_score
+    #One should not get minuspoints for a video. Max is zero
+    if(final_score < 0 ):
+        return 0
+    else:
+        return final_score
 
 def plot_pred_and_gt(gt_coord, pred_coord, frame, gt_hex_ids, pred_hex_ids, frame_number):
     # Draw dots on the frame based on the coordinates
@@ -273,8 +290,30 @@ def _validate_dataframe_structure(df: pd.DataFrame, required_columns: list) -> b
     else:
         return False
 
+def run_on_folder(team):
+    test_folder = "uploads"
+    pred_folder = f"uploads/{team}/{team}"
+    #pred_folder = "uploads"
 
-# define main function call
+    # Get list of all files in the test folder
+    test_files = glob.glob(os.path.join(test_folder, "*.csv"))
+    sum =0
+    for test_file in test_files:
+        # Get the base name of the test file (e.g., test003.csv)
+        base_name = os.path.basename(test_file)
+        # Construct the corresponding prediction file path
+        pred_file = os.path.join(pred_folder, base_name)
+
+        # Check if the corresponding prediction file exists
+        if os.path.exists(pred_file):
+            score = get_score_fct(pred_file, test_file, log=False, vid=False)
+            sum += score
+            print(f"Score for {base_name}: {score}")
+        else:
+            print(f"Prediction file not found for {base_name}")
+    print(f"SCORE : ---------{sum}-------")
+
+
 if __name__ == "__main__":
     #extract args
     # import argparse
@@ -283,9 +322,10 @@ if __name__ == "__main__":
     # parser.add_argument("path_to_gt", help="path to the ground truth file")
     # parser.add_argument("--log", help="log the score", action="store_true")
     # args = parser.parse_args()
-    path_pred = "uploads/HacksBug/test001.csv"
-    path_test = "test/test001.csv"
-
+    path_pred = "uploads/HexTrackers/test003.csv"
+    path_test = "test/test003.csv"
+    teams = ["BugHunters","HacksBug","HexagonHackers","HexTrackers","JustAJoke","PitchCrawlers","StrafeSnipers"]
+    #run_on_folder("HexagonHackers")
 
 
     #print(f"Score: {get_score_fct(args.path_to_prediction, args.path_to_gt, args.log)}")
