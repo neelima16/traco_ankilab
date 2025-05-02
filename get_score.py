@@ -137,7 +137,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             continue
         # Calculate the distance between the hexbugs
         #here is in the website x and y changed because test data is inverted
-        distance_matrix = cdist(list(frame_gt_df[['y', 'x']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
+        distance_matrix = cdist(list(frame_gt_df[['x', 'y']].values),list(frame_pred_df[['x', 'y']].values), 'euclidean')
         # get hexbugs with shortest distance
         #print(distance_matrix)
         hungarian = Hungarian(distance_matrix)
@@ -157,7 +157,7 @@ def get_score_fct(path_to_prediction: str, path_to_gt: str, log: bool = False, v
             if not ret:
                 break
             # Process the frame (draw a dot)
-            processed_frame = plot_pred_and_gt(list(frame_gt_df[['y', 'x']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
+            processed_frame = plot_pred_and_gt(list(frame_gt_df[['x', 'y']].values), list(frame_pred_df[['x', 'y']].values), frame,gt_hex, pred_hex,idx)
             # cv2.imshow("Frame with Dot", processed_frame)
             # cv2.waitKey(0)
             output_video.write(processed_frame)
